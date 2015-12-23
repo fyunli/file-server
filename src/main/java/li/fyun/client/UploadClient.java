@@ -14,13 +14,15 @@ import java.net.Socket;
  */
 public class UploadClient {
 
-    static final String SERVER = "192.168.1.80";
-    static final int PORT = 7878;
     static final int BUFFER_SIZE = 1024;
     static final Gson GSON = new Gson();
 
-    public UploadClient() {
+    String server;
+    int port;
 
+    public UploadClient(String server, int port) {
+        this.server = server;
+        this.port = port;
     }
 
     public void upload(File file) throws IOException {
@@ -28,7 +30,7 @@ public class UploadClient {
             throw new IOException("invalid file.");
         }
 
-        Socket socket = new Socket(SERVER, PORT);
+        Socket socket = new Socket(server, port);
         OutputStream outStream = socket.getOutputStream();
 
         String socketHeader = getSocketHeader(file);

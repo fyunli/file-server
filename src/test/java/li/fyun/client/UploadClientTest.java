@@ -15,7 +15,7 @@ public class UploadClientTest {
             String filename = "/Users/fyunli/Downloads/Java Servlet Tutorial Cookbook.pdf";
             File file = new File(filename);
 
-            new UploadClient().upload(file);
+            new UploadClient("192.168.1.80", 7878).upload(file);
         } catch (Exception e) {
             e.printStackTrace();
         }

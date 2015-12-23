@@ -1,25 +1,11 @@
 package li.fyun.server;
 
-import com.google.gson.Gson;
-import li.fyun.ResponseMessage;
-import li.fyun.StreamUtils;
-import li.fyun.UploadHeader;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PushbackInputStream;
-import java.io.RandomAccessFile;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -29,7 +15,6 @@ import java.util.concurrent.Executors;
 public class FileServer {
 
     static Logger logger = LoggerFactory.getLogger(FileServer.class);
-    static final Gson GSON = new Gson();
 
     private ExecutorService executorService;//线程池
     private int port;//监听端口
@@ -59,100 +44,6 @@ public class FileServer {
                 executorService.execute(new SocketTask(socket));
             } catch (Exception e) {
                 logger.error(e.getMessage(), e);
-            }
-        }
-    }
-
-    private final class SocketTask implements Runnable {
-        private Socket socket = null;
-
-        public SocketTask(Socket socket) {
-            this.socket = socket;
-        }
-
-        public void run() {
-            try {
-                logger.debug("accepted connection " + socket.getInetAddress() + ":" + socket.getPort());
-
-                PushbackInputStream inStream = new PushbackInputStream(socket.getInputStream());
-
-                String jsonHeader = StreamUtils.readLine(inStream);
-                logger.debug("header: {}", jsonHeader);
-
-                // TODO: validate file
-                if (StringUtils.isNotBlank(jsonHeader)) {
-                    UploadHeader uploadHeader = GSON.fromJson(jsonHeader, UploadHeader.class);
-
-                    FileUploadLog log = null;
-                    if (StringUtils.isNotBlank(uploadHeader.getSourceId())) {
-                        log = FileUploadLog.findlog(uploadHeader.getSourceId()); //查找上传的文件是否存在上传记录
-                    }
-
-                    File file = null;
-                    long position = 0;
-
-                    if (log == null) {//如果不存在上传记录,为文件添加跟踪记录
-                        String path = new SimpleDateFormat("yyyyMMdd").format(new Date());
-                        File dir = new File("file/" + path);
-                        if (!dir.exists()) {
-                            dir.mkdirs();
-                        }
-                        file = new File(dir, uploadHeader.getFilename());
-
-                        // TODO: handle the duplicate file name
-
-                        logger.debug("file {}", file.getAbsolutePath());
-                        log = FileUploadLog.saveLog(uploadHeader.getSourceId(), file);
-                    } else {// 如果存在上传记录,读取已经上传的数据长度
-                        file = new File(log.getAbsolutePath());//从上传记录中得到文件的路径
-                        if (file.exists()) {
-                            position = log.getLength();
-                            logger.debug("position {}", position);
-                        }
-                    }
-
-                    OutputStream outStream = socket.getOutputStream();
-
-                    ResponseMessage responseMessage = new ResponseMessage(
-                            0, "start upload from the position " + position,
-                            uploadHeader.getSourceId(), position);
-                    String response = GSON.toJson(responseMessage) + "\r\n";
-
-                    //服务器收到客户端的请求信息后，给客户端返回响应信息：position指示客户端从文件的什么位置开始上传
-                    outStream.write(response.getBytes());
-
-                    RandomAccessFile fileOutStream = new RandomAccessFile(file, "rwd");
-                    if (position == 0) {
-                        fileOutStream.setLength(Long.valueOf(uploadHeader.getContentLength()));//设置文件长度
-                    }
-
-                    fileOutStream.seek(position);//指定从文件的特定位置开始写入数据
-                    byte[] buffer = new byte[1024];
-                    int len = -1;
-                    long length = position;
-                    while ((len = inStream.read(buffer)) != -1) {//从输入流中读取数据写入到文件中
-                        fileOutStream.write(buffer, 0, len);
-                        length += len;
-                        log.setLength(length);
-                    }
-
-                    if (length == fileOutStream.length()) {
-                        FileUploadLog.deleteLog(uploadHeader.getSourceId());
-                    }
-
-                    fileOutStream.close();
-                    inStream.close();
-                    outStream.close();
-                    file = null;
-                }
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
-            } finally {
-                try {
-                    if (socket != null && !socket.isClosed()) socket.close();
-                } catch (IOException e) {
-                    // ignore
-                }
             }
         }
     }

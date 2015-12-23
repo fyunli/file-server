@@ -40,7 +40,7 @@ class FileUploadLog {
         return simpleMapCache.get(sourceId);
     }
 
-    public static FileUploadLog saveLog(String sourceId, File saveFile) {
+    public static FileUploadLog createLog(String sourceId, File saveFile) {
         FileUploadLog fileLog = new FileUploadLog(sourceId, saveFile.getAbsolutePath());
         simpleMapCache.put(sourceId, fileLog);
         return fileLog;
