@@ -1,5 +1,6 @@
 # file-server
-一个简单的通过SOCKET上传文件SERVER
+
+通过 SOCKET 上传文件到 SERVER 的简单实现
 
 ## usage
 
