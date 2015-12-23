@@ -16,14 +16,15 @@ import java.util.Date;
 /**
  * Created by fyunli on 15/12/23.
  */
-public class SocketTask implements Runnable {
+public class FileUploadSocketTask implements Runnable {
 
-    static Logger logger = LoggerFactory.getLogger(SocketTask.class);
+    static Logger logger = LoggerFactory.getLogger(FileUploadSocketTask.class);
 
     private Socket socket = null;
     static final Gson GSON = new Gson();
+    static final int BUFFER_SIZE = 1024;
 
-    public SocketTask(Socket socket) {
+    public FileUploadSocketTask(Socket socket) {
         this.socket = socket;
     }
 
@@ -111,7 +112,7 @@ public class SocketTask implements Runnable {
         }
 
         fileOutStream.seek(position);//指定从文件的特定位置开始写入数据
-        byte[] buffer = new byte[1024];
+        byte[] buffer = new byte[BUFFER_SIZE];
         int len = -1;
         long length = position;
         while ((len = inStream.read(buffer)) != -1) {//从输入流中读取数据写入到文件中

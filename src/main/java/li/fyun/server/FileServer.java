@@ -41,7 +41,7 @@ public class FileServer {
         while (!quit) {
             try {
                 Socket socket = server.accept();
-                executorService.execute(new SocketTask(socket));
+                executorService.execute(new FileUploadSocketTask(socket));
             } catch (Exception e) {
                 logger.error(e.getMessage(), e);
             }
