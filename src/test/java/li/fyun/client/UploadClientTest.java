@@ -12,7 +12,7 @@ public class UploadClientTest {
     @Test
     public void testUpload() {
         try {
-            String filename = "/Users/fyunli/Downloads/ASshenzhen-20140718-wubo.7z";
+            String filename = "/Users/fyunli/Downloads/Java Servlet Tutorial Cookbook.pdf";
             File file = new File(filename);
 
             new UploadClient().upload(file);

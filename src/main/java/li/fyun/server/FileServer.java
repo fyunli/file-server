@@ -1,6 +1,7 @@
 package li.fyun.server;
 
 import com.google.gson.Gson;
+import li.fyun.ResponseMessage;
 import li.fyun.StreamUtils;
 import li.fyun.UploadHeader;
 import org.apache.commons.lang3.StringUtils;
@@ -88,7 +89,7 @@ public class FileServer {
                     }
 
                     File file = null;
-                    int position = 0;
+                    long position = 0;
 
                     if (log == null) {//如果不存在上传记录,为文件添加跟踪记录
                         String path = new SimpleDateFormat("yyyyMMdd").format(new Date());
@@ -103,25 +104,21 @@ public class FileServer {
                         logger.debug("file {}", file.getAbsolutePath());
                         log = FileUploadLog.saveLog(uploadHeader.getSourceId(), file);
                     } else {// 如果存在上传记录,读取已经上传的数据长度
-                        file = new File(log.getFilePath());//从上传记录中得到文件的路径
+                        file = new File(log.getAbsolutePath());//从上传记录中得到文件的路径
                         if (file.exists()) {
-                            File logFile = new File(file.getParentFile(), file.getName() + ".log");
-                            if (logFile.exists()) {
-                                Properties properties = new Properties();
-                                properties.load(new FileInputStream(logFile));
-                                position = Integer.valueOf(properties.getProperty("length"));//读取已经上传的数据长度
-
-                                logger.debug("position {}", position);
-                            }
+                            position = log.getLength();
+                            logger.debug("position {}", position);
                         }
                     }
-                    logger.debug("log file path {}", log.getFilePath());
 
                     OutputStream outStream = socket.getOutputStream();
-                    String response = "sourceid=" + uploadHeader.getSourceId() + ";position=" + position + "\r\n";
 
-                    //服务器收到客户端的请求信息后，给客户端返回响应信息：sourceid=1274773833264;position=0
-                    //sourceid由服务器端生成，唯一标识上传的文件，position指示客户端从文件的什么位置开始上传
+                    ResponseMessage responseMessage = new ResponseMessage(
+                            0, "start upload from the position " + position,
+                            uploadHeader.getSourceId(), position);
+                    String response = GSON.toJson(responseMessage) + "\r\n";
+
+                    //服务器收到客户端的请求信息后，给客户端返回响应信息：position指示客户端从文件的什么位置开始上传
                     outStream.write(response.getBytes());
 
                     RandomAccessFile fileOutStream = new RandomAccessFile(file, "rwd");
@@ -132,16 +129,13 @@ public class FileServer {
                     fileOutStream.seek(position);//指定从文件的特定位置开始写入数据
                     byte[] buffer = new byte[1024];
                     int len = -1;
-                    int length = position;
+                    long length = position;
                     while ((len = inStream.read(buffer)) != -1) {//从输入流中读取数据写入到文件中
                         fileOutStream.write(buffer, 0, len);
                         length += len;
-                        Properties properties = new Properties();
-                        properties.put("length", String.valueOf(length));
-                        FileOutputStream logFile = new FileOutputStream(new File(file.getParentFile(), file.getName() + ".log"));
-                        properties.store(logFile, null);//实时记录已经接收的文件长度
-                        logFile.close();
+                        log.setLength(length);
                     }
+
                     if (length == fileOutStream.length()) {
                         FileUploadLog.deleteLog(uploadHeader.getSourceId());
                     }
@@ -162,7 +156,6 @@ public class FileServer {
             }
         }
     }
-
 
     public static void main(String[] args) {
         FileServer s = new FileServer(7878);

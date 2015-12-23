@@ -1,9 +1,10 @@
 package li.fyun.client;
 
 import com.google.gson.Gson;
+import li.fyun.Base64;
+import li.fyun.ResponseMessage;
 import li.fyun.StreamUtils;
 import li.fyun.UploadHeader;
-import sun.misc.BASE64Encoder;
 
 import java.io.*;
 import java.net.Socket;
@@ -36,10 +37,11 @@ public class UploadClient {
 
         PushbackInputStream pushbackInputStream = new PushbackInputStream(socket.getInputStream());
 
-        String response = StreamUtils.readLine(pushbackInputStream);
-        System.out.println(response);
+        String responseJson = StreamUtils.readLine(pushbackInputStream);
+        System.out.println(responseJson);
+        ResponseMessage responseMessage = GSON.fromJson(responseJson, ResponseMessage.class);
 
-        Long breakPosition = getBreakPosition(response);
+        Long breakPosition = responseMessage.getPosition();
         uploadFile(outStream, file, breakPosition);
 
         outStream.close();
@@ -59,29 +61,11 @@ public class UploadClient {
         fileOutStream.close();
     }
 
-    private long getBreakPosition(String response) throws IOException {
-        long position = 0;
-        if (response == null || "".equals(response)) {
-            return position;
-        }
-
-        String[] items = response.split(";");
-        if (items.length != 2) {
-            return position;
-        }
-
-        try {
-            position = Long.valueOf(items[1].substring(items[1].indexOf("=") + 1));
-        } finally {
-            return position;
-        }
-    }
-
     protected String getSocketHeader(File file) throws UnsupportedEncodingException {
         UploadHeader uploadHeader = new UploadHeader();
         uploadHeader.setContentLength(file.length());
         uploadHeader.setFilename(file.getName());
-        uploadHeader.setSourceId(new BASE64Encoder().encode(file.getAbsolutePath().getBytes("utf-8")));
+        uploadHeader.setSourceId(Base64.encode(file.getAbsolutePath().getBytes("utf-8")));
         return GSON.toJson(uploadHeader) + "\r\n";
     }
 

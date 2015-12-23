@@ -12,32 +12,32 @@ class FileUploadLog {
     private static final Map<String, FileUploadLog> simpleMapCache = new HashMap<String, FileUploadLog>();
 
     private String sourceId;
-    private String filePath;
-    private long position;
+    private String absolutePath;
+    private long length;
 
-    private FileUploadLog(String sourceId, String filePath){
+    private FileUploadLog(String sourceId, String absolutePath) {
         this.sourceId = sourceId;
-        this.filePath = filePath;
+        this.absolutePath = absolutePath;
     }
 
     public String getSourceId() {
         return sourceId;
     }
 
-    public String getFilePath() {
-        return filePath;
+    public String getAbsolutePath() {
+        return absolutePath;
     }
 
-    public long getPosition() {
-        return position;
+    public long getLength() {
+        return length;
     }
 
-    public void setPosition(long position) {
-        this.position = position;
+    public void setLength(long length) {
+        this.length = length;
     }
 
-    public static FileUploadLog findlog(String sourceid) {
-        return simpleMapCache.get(sourceid);
+    public static FileUploadLog findlog(String sourceId) {
+        return simpleMapCache.get(sourceId);
     }
 
     public static FileUploadLog saveLog(String sourceId, File saveFile) {
@@ -46,8 +46,10 @@ class FileUploadLog {
         return fileLog;
     }
 
-    public static void deleteLog(String sourceid) {
-        if (simpleMapCache.containsKey(sourceid)) simpleMapCache.remove(sourceid);
+    public static void deleteLog(String sourceId) {
+        if (simpleMapCache.containsKey(sourceId)) {
+            simpleMapCache.remove(sourceId);
+        }
     }
 
 }
