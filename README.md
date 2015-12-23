@@ -6,7 +6,7 @@
 使用以下代码启动服务器端：
 
 ```
-new FileServer(7878).start(); 
+new FileServer(port).start(); 
 ```
 
 使用以下代码从客户端上传文件到服务器端：
