@@ -82,7 +82,7 @@ public class UploadClient {
         uploadHeader.setContentLength(file.length());
         uploadHeader.setFilename(file.getName());
         uploadHeader.setSourceId(new BASE64Encoder().encode(file.getAbsolutePath().getBytes("utf-8")));
-        return GSON.toJson(uploadHeader);
+        return GSON.toJson(uploadHeader) + "\r\n";
     }
 
 }

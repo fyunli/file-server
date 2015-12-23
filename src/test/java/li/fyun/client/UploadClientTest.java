@@ -7,7 +7,7 @@ import java.io.*;
 /**
  * Created by fyunli on 15/12/23.
  */
-public class FileClient {
+public class UploadClientTest {
 
     @Test
     public void testUpload() {
